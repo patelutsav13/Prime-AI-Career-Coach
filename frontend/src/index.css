@@ -1,0 +1,232 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-darkBg: #030014;
+  --color-neonBlue: #00d2ff;
+  --color-neonPurple: #d200ff;
+  --color-neonCyan: #00f6ff;
+
+  --font-sans: 'Inter', sans-serif;
+
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --shadow-glowBlue: 0 0 20px rgba(0, 210, 255, 0.25);
+  --shadow-glowPurple: 0 0 20px rgba(210, 0, 255, 0.25);
+  --shadow-glowCyan: 0 0 20px rgba(0, 246, 255, 0.25);
+}
+
+@utility glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+@utility glass-panel-hover {
+  transition: all 0.3s;
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 210, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 210, 255, 0.1);
+  }
+}
+
+@utility glass-nav {
+  background: rgba(3, 0, 20, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@utility text-neon-blue {
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.6);
+}
+
+@utility text-neon-purple {
+  text-shadow: 0 0 10px rgba(210, 0, 255, 0.6);
+}
+
+@utility text-neon-cyan {
+  text-shadow: 0 0 10px rgba(0, 246, 255, 0.6);
+}
+
+@utility glow-btn-blue {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+  &:hover {
+    box-shadow: 0 0 25px rgba(0, 210, 255, 0.6);
+    transform: translateY(-2px);
+  }
+}
+
+@utility glow-btn-purple {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(210, 0, 255, 0.2);
+  &:hover {
+    box-shadow: 0 0 25px rgba(210, 0, 255, 0.6);
+    transform: translateY(-2px);
+  }
+}
+
+@utility font-orbitron {
+  font-family: 'Orbitron', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-darkBg);
+    color: #f3f4f6;
+    overflow-x: hidden;
+    font-family: 'Inter', sans-serif;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(120, 50, 255, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(0, 210, 255, 0.12) 0%, transparent 40%),
+      linear-gradient(180deg, #030014 0%, #080325 50%, #02000a 100%);
+    background-attachment: fixed;
+    transition: background-color 0.3s, color 0.3s, background-image 0.3s;
+  }
+}
+
+/* Light Theme Overrides */
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 40%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+}
+
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.04) !important;
+}
+
+html.light .glass-panel-hover:hover {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(6, 182, 212, 0.2) !important;
+  box-shadow: 0 8px 32px 0 rgba(6, 182, 212, 0.08) !important;
+}
+
+html.light .glass-nav {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .text-white {
+  color: #0f172a !important;
+}
+
+html.light .text-gray-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-gray-300 {
+  color: #334155 !important;
+}
+
+html.light .text-gray-400 {
+  color: #475569 !important;
+}
+
+html.light .text-gray-500 {
+  color: #64748b !important;
+}
+
+html.light .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+html.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light input, 
+html.light textarea, 
+html.light select {
+  color: #0f172a !important;
+}
+
+html.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.4);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #030014;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 50, 255, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 210, 255, 0.5);
+}
+
+/* Keyframe Animations */
+@keyframes scanning {
+  0% {
+    top: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 100%;
+    opacity: 0.8;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.8;
+  }
+}
+
+.animate-scan {
+  animation: scanning 4s linear infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite;
+}
