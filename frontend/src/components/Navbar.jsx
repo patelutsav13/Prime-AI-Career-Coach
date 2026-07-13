@@ -55,6 +55,7 @@ export default function Navbar() {
     { name: 'Resume AI Analyzer', path: '/resume' },
     { name: 'Career Role Matcher', path: '/role-matcher' },
     { name: 'AI Interview Practice', path: '/interview' },
+    { name: 'PrimeAI Coach', path: '/coach' },
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Contact', path: '/contact' }
   ];

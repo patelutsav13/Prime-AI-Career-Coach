@@ -5,6 +5,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 const UserHistory = require('./models/UserHistory');
 const { analyzeResumeAI, matchCareerRoleAI, gradeSelfIntroductionAI, ROLE_MCQ_BANK } = require('./utils/aiEngine');
+const Conversation = require('./models/Conversation');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const upload = multer({ storage: multer.memoryStorage() });
@@ -583,6 +585,306 @@ app.get('/api/mcqs/:role', (req, res) => {
   }
   
   res.json(questions);
+});
+
+// =============================================
+// PRIMEAI COACH - AI CHAT ASSISTANT ROUTES
+// =============================================
+
+// Initialize Gemini AI
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+
+const COACH_SYSTEM_PROMPT = `You are PrimeAI Coach, an expert AI career mentor built into the PrimeAI Career Coach platform. You specialize in:
+- Resume Analysis & ATS Optimization
+- Career Guidance & Learning Roadmaps
+- Interview Preparation & Mock Coaching
+- Frontend Development (React, HTML, CSS, JavaScript, TypeScript)
+- Backend Development (Node.js, Express.js, MongoDB, REST APIs)
+- Python, Machine Learning, Artificial Intelligence
+- Data Structures, Algorithms, SQL
+- Git, Cloud Computing, DevOps
+- Software Engineering Best Practices
+
+Rules:
+1. Always be helpful, encouraging, and professional.
+2. Provide specific, actionable advice with code examples when relevant.
+3. Use markdown formatting: **bold**, *italic*, code blocks with language tags, bullet points.
+4. If the user shares resume data, analyze it thoroughly and give personalized feedback.
+5. Remember the entire conversation context and refer back to previous messages naturally.
+6. When suggesting learning paths, break them into weekly plans.
+7. For interview prep, provide realistic questions with model answers.
+8. Keep responses concise but comprehensive. Use structured formatting.
+9. If you don't know something, say so honestly rather than making things up.`;
+
+const generateFallbackResponse = (message) => {
+  const lowerMsg = message.toLowerCase();
+  
+  if (lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
+    return "Hello! I'm PrimeAI Coach. I noticed we're currently experiencing high API traffic (Quota Exceeded). However, I'm still here to help you locally! What career or technical questions do you have today?";
+  }
+  if (lowerMsg.includes('resume')) {
+    return "Based on your resume, I'd suggest focusing on highlighting quantifiable achievements (e.g., 'Increased performance by X%'). Make sure to tailor your skills section to the specific job descriptions you're targeting. (Note: This is a local fallback response due to API quota limits).";
+  }
+  if (lowerMsg.includes('interview')) {
+    return "For interview preparation, the STAR method (Situation, Task, Action, Result) is highly effective. Let's practice! Tell me about a time you overcame a difficult challenge at work. (Note: Local fallback response).";
+  }
+  if (lowerMsg.includes('react') || lowerMsg.includes('frontend')) {
+    return "For frontend development, especially with React, focus on understanding component lifecycle, state management (hooks like useState, useEffect), and performance optimization. Building projects is the best way to learn! (Note: Local fallback response).";
+  }
+  
+  return "I understand you're asking about '" + message.substring(0, 30) + "...'. Currently, my primary AI brain is hitting a Google API rate limit (Quota 0). Until the limit resets, I can provide basic guidance on resumes, interviews, or frontend development if you ask about those topics!";
+};
+
+const generateCoachTitle = async (userMessage) => {
+  if (!genAI) return userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '');
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+    const result = await model.generateContent(`Generate a very short title (max 6 words, no quotes, no punctuation at end) for a conversation that starts with this message: "${userMessage.substring(0, 200)}"`);
+    const title = result.response.text().trim().replace(/["']/g, '');
+    return title.substring(0, 60) || 'New Conversation';
+  } catch (err) {
+    console.warn("Title generation failed, using fallback.");
+    return 'Chat: ' + userMessage.substring(0, 20) + '...';
+  }
+};
+
+// 1. Send message to PrimeAI Coach
+app.post('/api/coach/chat', async (req, res) => {
+  try {
+    const { email, conversationId, message, resumeContext } = req.body;
+    if (!email || !message) {
+      return res.status(400).json({ error: 'Email and message are required.' });
+    }
+    if (!genAI) {
+      return res.status(500).json({ error: 'Gemini API key not configured. Add GEMINI_API_KEY to backend/.env file.' });
+    }
+
+    let conversation;
+    if (conversationId) {
+      conversation = await Conversation.findById(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found.' });
+      }
+    } else {
+      conversation = new Conversation({ email, title: 'New Conversation', messages: [] });
+    }
+
+    // Add user message
+    conversation.messages.push({ role: 'user', text: message, timestamp: new Date() });
+
+    // Build conversation history for Gemini
+    let systemPrompt = COACH_SYSTEM_PROMPT;
+    if (resumeContext) {
+      systemPrompt += `\n\nThe user has the following resume data on file:\n${JSON.stringify(resumeContext, null, 2)}\nUse this context when they ask about their resume, skills, career fit, or job readiness.`;
+    }
+
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-lite',
+      systemInstruction: systemPrompt
+    });
+
+    // Build history array for multi-turn
+    const chatHistory = conversation.messages.slice(0, -1).map(msg => ({
+      role: msg.role,
+      parts: [{ text: msg.text }]
+    }));
+
+    let aiText = '';
+    try {
+      const chat = model.startChat({ history: chatHistory });
+      const result = await chat.sendMessage(message);
+      aiText = result.response.text();
+    } catch (apiError) {
+      console.warn("Gemini API Error, using fallback response.", apiError.message);
+      aiText = generateFallbackResponse(message);
+    }
+
+    // Add AI response
+    conversation.messages.push({ role: 'model', text: aiText, timestamp: new Date() });
+
+    // Auto-generate title from first message
+    if (conversation.messages.filter(m => m.role === 'user').length === 1) {
+      conversation.title = await generateCoachTitle(message);
+    }
+
+    await conversation.save();
+    res.json({ conversation, aiResponse: aiText });
+  } catch (error) {
+    console.error('Error in /api/coach/chat:', error);
+    res.status(500).json({ error: 'Failed to process chat message.' });
+  }
+});
+
+// 2. Get all conversations for a user
+app.get('/api/coach/conversations/:email', async (req, res) => {
+  try {
+    const conversations = await Conversation.find(
+      { email: req.params.email },
+      { title: 1, createdAt: 1, updatedAt: 1, 'messages': { $slice: -1 } }
+    ).sort({ updatedAt: -1 });
+
+    const summaries = conversations.map(c => ({
+      _id: c._id,
+      title: c.title,
+      updatedAt: c.updatedAt,
+      messageCount: c.messages?.length || 0,
+      lastMessage: c.messages?.[0]?.text?.substring(0, 80) || ''
+    }));
+    res.json(summaries);
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({ error: 'Server error fetching conversations.' });
+  }
+});
+
+// 3. Get full conversation by ID
+app.get('/api/coach/conversation/:id', async (req, res) => {
+  try {
+    const conversation = await Conversation.findById(req.params.id);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found.' });
+    }
+    res.json(conversation);
+  } catch (error) {
+    console.error('Error fetching conversation:', error);
+    res.status(500).json({ error: 'Server error fetching conversation.' });
+  }
+});
+
+// 4. Create new conversation
+app.post('/api/coach/conversation', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    const conversation = new Conversation({ email, title: 'New Conversation', messages: [] });
+    await conversation.save();
+    res.json(conversation);
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({ error: 'Server error creating conversation.' });
+  }
+});
+
+// 5. Rename conversation
+app.put('/api/coach/conversation/:id/rename', async (req, res) => {
+  try {
+    const { title } = req.body;
+    const conversation = await Conversation.findByIdAndUpdate(
+      req.params.id,
+      { title: title || 'Untitled' },
+      { new: true }
+    );
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found.' });
+    res.json(conversation);
+  } catch (error) {
+    console.error('Error renaming conversation:', error);
+    res.status(500).json({ error: 'Server error renaming conversation.' });
+  }
+});
+
+// 6. Delete conversation
+app.delete('/api/coach/conversation/:id', async (req, res) => {
+  try {
+    const conversation = await Conversation.findByIdAndDelete(req.params.id);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found.' });
+    res.json({ message: 'Conversation deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ error: 'Server error deleting conversation.' });
+  }
+});
+
+// 7. Clear all conversations for a user
+app.delete('/api/coach/conversations/:email', async (req, res) => {
+  try {
+    await Conversation.deleteMany({ email: req.params.email });
+    res.json({ message: 'All conversations cleared.' });
+  } catch (error) {
+    console.error('Error clearing conversations:', error);
+    res.status(500).json({ error: 'Server error clearing conversations.' });
+  }
+});
+
+// 8. Regenerate last AI response
+app.post('/api/coach/regenerate', async (req, res) => {
+  try {
+    const { conversationId, email, resumeContext } = req.body;
+    if (!conversationId || !email) {
+      return res.status(400).json({ error: 'Conversation ID and email are required.' });
+    }
+    if (!genAI) {
+      return res.status(500).json({ error: 'Gemini API key not configured.' });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found.' });
+
+    // Remove last model message
+    if (conversation.messages.length > 0 && conversation.messages[conversation.messages.length - 1].role === 'model') {
+      conversation.messages.pop();
+    }
+
+    // Find last user message to regenerate from
+    const lastUserMsg = [...conversation.messages].reverse().find(m => m.role === 'user');
+    if (!lastUserMsg) return res.status(400).json({ error: 'No user message to regenerate from.' });
+
+    let systemPrompt = COACH_SYSTEM_PROMPT;
+    if (resumeContext) {
+      systemPrompt += `\n\nThe user has the following resume data on file:\n${JSON.stringify(resumeContext, null, 2)}`;
+    }
+
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-lite',
+      systemInstruction: systemPrompt
+    });
+
+    const chatHistory = conversation.messages.slice(0, -1).map(msg => ({
+      role: msg.role,
+      parts: [{ text: msg.text }]
+    }));
+
+    let aiText = '';
+    try {
+      const chat = model.startChat({ history: chatHistory });
+      const result = await chat.sendMessage(lastUserMsg.text);
+      aiText = result.response.text();
+    } catch (apiError) {
+      console.warn("Gemini API Error in regenerate, using fallback response.", apiError.message);
+      aiText = generateFallbackResponse(lastUserMsg.text);
+    }
+
+    conversation.messages.push({ role: 'model', text: aiText, timestamp: new Date() });
+    await conversation.save();
+
+    res.json({ conversation, aiResponse: aiText });
+  } catch (error) {
+    console.error('Error regenerating response:', error);
+    res.status(500).json({ error: 'Failed to regenerate AI response.' });
+  }
+});
+
+// 9. Like/Dislike a message
+app.put('/api/coach/message/:conversationId/:messageIndex/react', async (req, res) => {
+  try {
+    const { conversationId, messageIndex } = req.params;
+    const { reaction } = req.body;
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found.' });
+
+    const idx = parseInt(messageIndex);
+    if (idx < 0 || idx >= conversation.messages.length) {
+      return res.status(400).json({ error: 'Invalid message index.' });
+    }
+
+    conversation.messages[idx].liked = reaction;
+    await conversation.save();
+
+    res.json({ message: 'Reaction saved.', conversation });
+  } catch (error) {
+    console.error('Error reacting to message:', error);
+    res.status(500).json({ error: 'Server error saving reaction.' });
+  }
 });
 
 // Listen on Port

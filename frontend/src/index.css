@@ -230,3 +230,19 @@ html.light ::-webkit-scrollbar-thumb:hover {
 .animate-pulse-glow {
   animation: pulse-glow 3s infinite;
 }
+
+/* PrimeAI Coach Chat Styles */
+.prose-chat { word-break: break-word; }
+.prose-chat strong { color: #fff; font-weight: 600; }
+.prose-chat em { color: #9ca3af; font-style: italic; }
+.prose-chat li { margin-bottom: 2px; color: #d1d5db; }
+.prose-chat br { display: block; margin: 4px 0; content: ''; }
+.code-block-wrapper { margin: 8px 0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+.code-block-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: rgba(255,255,255,0.06); font-size: 10px; color: #9ca3af; font-family: 'Orbitron', monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+.copy-code-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 9px; font-family: 'Orbitron', monospace; transition: all 0.2s; }
+.copy-code-btn:hover { color: #fff; border-color: rgba(0,210,255,0.4); }
+.code-block { margin: 0; padding: 12px 16px; background: rgba(0,0,0,0.4); overflow-x: auto; font-size: 12px; line-height: 1.6; }
+.code-block code { color: #e2e8f0; font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace; }
+.inline-code { background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.15); color: #67e8f9; padding: 1px 6px; border-radius: 4px; font-size: 0.85em; font-family: 'Fira Code', monospace; }
+.typing-cursor { display: inline-block; color: #22d3ee; animation: blink 0.8s infinite; font-weight: 100; }
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }

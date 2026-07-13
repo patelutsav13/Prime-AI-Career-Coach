@@ -9,6 +9,7 @@ import InterviewPractice from './pages/InterviewPractice';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Contact from './pages/Contact';
+import PrimeAICoach from './pages/PrimeAICoach';
 
 // Scroll to top helper on route change
 function ScrollToTop() {
@@ -53,6 +54,7 @@ function App() {
             <Route path="/role-matcher" element={<RoleMatcher />} />
             <Route path="/interview" element={<InterviewPractice />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/coach" element={<PrimeAICoach />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>
