@@ -153,132 +153,155 @@ app.post('/api/user/upload-resume', upload.single('resume'), async (req, res) =>
       return res.status(400).json({ error: 'No file uploaded.' });
     }
 
+    // Ensure it is a PDF
+    const isPDF = req.file.buffer.toString('utf-8', 0, 5).startsWith('%PDF-');
+    if (!isPDF) {
+      return res.status(400).json({ error: 'Please upload a proper resume file (PDF format).' });
+    }
+
+    // Extract text from PDF
     let text = '';
     try {
       const pdfData = await pdfParse(req.file.buffer);
       text = pdfData.text || '';
     } catch (parseErr) {
-      console.warn('pdf-parse failed, trying custom stream decompressor:', parseErr);
+      console.warn('pdf-parse failed, trying fallback:', parseErr);
     }
-
     if (!text || text.trim().length === 0) {
       text = extractTextFromPDFBuffer(req.file.buffer);
     }
-
     if (!text || text.trim().length === 0) {
       text = req.file.buffer.toString('utf-8');
     }
 
+    // ============================================================
+    // SECTION-BASED PARSER
+    // ============================================================
+    const rawLines = text.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
+
+    // Section header patterns
+    const SECTION_PATTERNS = {
+      skills:       /^(technical\s+)?skills[:\s]*$/i,
+      projects:     /^(technical\s+)?projects?[:\s]*$|^portfolio[:\s]*$|^applications?[:\s]*$/i,
+      experience:   /^(work\s+)?experience[:\s]*$|^employment[:\s]*$/i,
+      education:    /^education[:\s]*$|^academic[:\s]*$/i,
+      certificates: /^certifications?[:\s]*$|^certificates?[:\s]*$|^achievements?[:\s]*$/i,
+    };
+
+    const isSectionHeader = (line) => Object.values(SECTION_PATTERNS).some(p => p.test(line));
+
+    const extractSection = (pattern) => {
+      let capturing = false;
+      const content = [];
+      for (const line of rawLines) {
+        if (pattern.test(line)) { capturing = true; continue; }
+        if (capturing) {
+          if (isSectionHeader(line)) break;
+          content.push(line);
+        }
+      }
+      return content;
+    };
+
+    // ---- SKILL CATALOG ----
     const skillCatalog = [
-      'HTML', 'CSS', 'Tailwind', 'Bootstrap', 'JavaScript', 'TypeScript',
-      'React', 'Redux', 'Next.js', 'Node.js', 'Express', 'MongoDB',
-      'MySQL', 'PostgreSQL', 'REST API', 'Git', 'GitHub', 'Python', 'Django',
-      'Flask', 'Java', 'Spring', 'C++', 'C#', 'SQL', 'Docker', 'AWS'
+      'HTML', 'CSS', 'Tailwind CSS', 'Bootstrap', 'JavaScript', 'TypeScript',
+      'React', 'Redux', 'Next.js', 'Vue.js', 'Angular', 'Svelte',
+      'Node.js', 'Express.js', 'Express', 'MongoDB', 'MySQL', 'PostgreSQL',
+      'REST API', 'GraphQL', 'Git', 'GitHub', 'GitLab',
+      'Python', 'Django', 'Flask', 'FastAPI',
+      'Java', 'Spring Boot', 'C++', 'C#', 'Kotlin', 'Swift',
+      'SQL', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'Firebase',
+      'JWT', 'OAuth', 'Linux', 'NPM', 'Postman', 'VS Code', 'Figma',
+      'Sass', 'NumPy', 'Pandas', 'Scikit-learn', 'TensorFlow', 'PyTorch',
+      'Power BI', 'Excel', 'Redis', 'CI/CD', 'Nginx', 'WebSockets', 'Tailwind'
     ];
 
-    // Check if it has standard resume markings
-    const hasSectionHeaders = /skills|technologies|expertise|proficiencies|languages|development|projects|portfolio|applications|work|experience|employment|education/i.test(text);
-    
-    let matchedSkillsCount = 0;
-    skillCatalog.forEach(skill => {
-      const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-      if (regex.test(text)) {
-        matchedSkillsCount++;
-      }
-    });
-
-    // Accept it if it starts with %PDF- signature and has basic indicators (headers or technical keywords)
-    const isPDF = req.file.buffer.toString('utf-8', 0, 5).startsWith('%PDF-');
-    
-    if (!isPDF) {
-      return res.status(400).json({ error: 'Please upload a proper resume file (PDF format).' });
-    }
-
-    // Relaxed check: if it is a PDF, and has either section headers or a few matching skill keywords, accept it.
-    if (!hasSectionHeaders && matchedSkillsCount < 2) {
-      return res.status(400).json({ error: 'Please upload a proper resume file containing Skills or Projects sections.' });
-    }
-
-    // Extract skills
+    // ---- EXTRACT SKILLS ----
+    const skillSectionLines = extractSection(SECTION_PATTERNS.skills);
+    const skillScanText = skillSectionLines.length > 2 ? skillSectionLines.join(' ') : text;
     const matchedSkills = [];
     skillCatalog.forEach(skill => {
       const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-      if (regex.test(text)) {
+      if (regex.test(skillScanText) && !matchedSkills.some(s => s.toLowerCase() === skill.toLowerCase())) {
         matchedSkills.push(skill);
       }
     });
 
-    // Extract projects
+    // ---- EXTRACT PROJECTS ----
+    const projectLines = extractSection(SECTION_PATTERNS.projects);
     const matchedProjects = [];
-    const lines = text.split(/[\r\n]+/);
-    let foundProjSection = false;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    for (let i = 0; i < projectLines.length && matchedProjects.length < 5; i++) {
+      const line = projectLines[i];
       if (line.length < 4) continue;
-
-      if (/projects|portfolio|applications/i.test(line)) {
-        foundProjSection = true;
-        continue;
-      }
-
-      if (foundProjSection) {
-        if (/experience|education|skills|summary|hobbies|languages/i.test(line)) {
-          break;
+      const isTechLine = /^[\w\s.+#,\/\-]+$/.test(line) && line.split(',').length >= 2 && line.length < 80;
+      const looksLikeTitle = line.length >= 5 && line.length <= 100 && !isTechLine && !/^[-•*→▶\d]/.test(line);
+      if (looksLikeTitle) {
+        const descParts = [];
+        for (let j = i + 1; j < Math.min(i + 5, projectLines.length); j++) {
+          const next = projectLines[j];
+          if (next.length > 25 && !/^[\w\s.+#,\/\-]+$/.test(next)) {
+            descParts.push(next);
+          } else break;
         }
-
-        const parts = line.split(/[:\-–]/);
-        if (parts.length >= 2) {
-          matchedProjects.push({
-            title: parts[0].trim().replace(/[()]/g, '').substring(0, 40),
-            description: parts.slice(1).join('-').trim().replace(/[()]/g, '').substring(0, 150)
-          });
-        } else {
-          matchedProjects.push({
-            title: 'Project ' + (matchedProjects.length + 1),
-            description: line.replace(/[()]/g, '').substring(0, 150)
-          });
-        }
-
-        if (matchedProjects.length >= 3) break;
+        matchedProjects.push({
+          title: line.replace(/[()[\]]/g, '').substring(0, 60),
+          description: descParts.join(' ').substring(0, 200) || ''
+        });
       }
     }
-
-    // Strict Validation: Ensure actual skills or projects were found
-    if (matchedSkills.length === 0 && matchedProjects.length === 0) {
-      return res.status(400).json({ error: 'Please upload a proper resume file containing Skills or Projects sections.' });
+    // Fallback for projects
+    if (matchedProjects.length === 0) {
+      rawLines.filter(l => l.length > 8 && l.length < 70 && /project|app|system|platform|tool|website|portal|dashboard/i.test(l))
+        .slice(0, 3).forEach(title => matchedProjects.push({ title: title.substring(0, 60), description: '' }));
     }
 
-    // Extract links
-    const githubMatch = text.match(/github\.com\/[A-Za-z0-9_\-\/]+/i);
-    const githubUrl = githubMatch ? 'https://' + githubMatch[0].replace(/[()]/g, '') : '';
+    // ---- EXTRACT EXPERIENCE ----
+    const expSectionLines = extractSection(SECTION_PATTERNS.experience);
+    const experienceText = expSectionLines.length > 0
+      ? expSectionLines.slice(0, 4).join(' | ').trim().substring(0, 300)
+      : rawLines.filter(l => /intern|developer|engineer|analyst|manager/i.test(l) && !/skills|projects|education/i.test(l))
+               .slice(0, 1).join('').substring(0, 200);
 
-    const linkedinMatch = text.match(/linkedin\.com\/in\/[A-Za-z0-9_\-\/]+/i);
-    const linkedinUrl = linkedinMatch ? 'https://' + linkedinMatch[0].replace(/[()]/g, '') : '';
+    // ---- EXTRACT EDUCATION ----
+    const eduSectionLines = extractSection(SECTION_PATTERNS.education);
+    const educationText = eduSectionLines.length > 0
+      ? eduSectionLines.slice(0, 3).join(' | ').trim().substring(0, 250)
+      : rawLines.filter(l => /bachelor|master|b\.tech|b\.e|bca|mca|degree|university|college|institute/i.test(l))
+               .slice(0, 1).join('').substring(0, 200);
+
+    // ---- EXTRACT CERTIFICATES ----
+    const certSectionLines = extractSection(SECTION_PATTERNS.certificates);
+    const certificates = certSectionLines.filter(l => l.length > 3).slice(0, 5).join(', ').substring(0, 400);
+
+    // ---- EXTRACT LINKS ----
+    const githubMatch = text.match(/github\.com\/[A-Za-z0-9_\-\/\.]+/i);
+    const githubUrl = githubMatch ? 'https://' + githubMatch[0].replace(/[()]/g, '').replace(/\/$/, '') : '';
+
+    const linkedinMatch = text.match(/linkedin\.com\/in\/[A-Za-z0-9_\-\/\.]+/i);
+    const linkedinUrl = linkedinMatch ? 'https://' + linkedinMatch[0].replace(/[()]/g, '').replace(/\/$/, '') : '';
 
     const urlMatches = text.match(/(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[a-zA-Z0-9-]*)*)/gi) || [];
     let portfolioUrl = '';
-    for (let url of urlMatches) {
-      if (!/github|linkedin|google|facebook|twitter|instagram|youtube|localhost/i.test(url)) {
+    for (const url of urlMatches) {
+      if (!/github|linkedin|google|facebook|twitter|instagram|youtube|localhost|microsoft|w3schools/i.test(url)) {
         portfolioUrl = url.startsWith('http') ? url : 'https://' + url;
         break;
       }
     }
 
-    // Extract Education and Experience lines
-    const eduLines = lines.filter(l => /bachelor|master|degree|university|college|institute|b\.tech|b\.e|b\.s|b\.c\.a|mca/i.test(l));
-    const educationText = eduLines.length > 0 ? eduLines[0].replace(/[()]/g, '').trim().substring(0, 100) : 'Bachelor of Computer Science, State University';
-
-    const expLines = lines.filter(l => /(?:intern|developer|engineer|analyst|manager|months|years|experience)\b/i.test(l) && !/skills|projects|github|linkedin|education|college/i.test(l));
-    const experienceText = expLines.length > 0 ? expLines[0].replace(/[()]/g, '').trim().substring(0, 100) : 'Software Development Intern (6 months)';
+    // Validation: Must have at least skills OR projects
+    if (matchedSkills.length === 0 && matchedProjects.length === 0) {
+      return res.status(400).json({ error: 'Could not extract Skills or Projects from your resume. Please check that your PDF has clearly labeled sections.' });
+    }
 
     res.json({
       skills: matchedSkills.join(', '),
       projects: matchedProjects,
       education: educationText,
       experience: experienceText,
+      certificates: certificates,
       github: githubUrl,
       linkedin: linkedinUrl,
       portfolio: portfolioUrl

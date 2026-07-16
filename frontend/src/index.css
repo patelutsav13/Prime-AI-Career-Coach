@@ -246,3 +246,94 @@ html.light ::-webkit-scrollbar-thumb:hover {
 .inline-code { background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.15); color: #67e8f9; padding: 1px 6px; border-radius: 4px; font-size: 0.85em; font-family: 'Fira Code', monospace; }
 .typing-cursor { display: inline-block; color: #22d3ee; animation: blink 0.8s infinite; font-weight: 100; }
 @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+/* ─────────────────────────────────────────────────
+   SKILL BADGES — Resume Analyzer
+   ───────────────────────────────────────────────── */
+.skill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1.5px solid;
+  cursor: default;
+  transition: all 0.22s ease;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.skill-badge-icon {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.skill-badge-name {
+  line-height: 1;
+}
+
+/* Frontend — Green */
+.skill-badge-frontend {
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+}
+.skill-badge-frontend .skill-badge-icon { color: #86efac; }
+.skill-badge-frontend:hover {
+  background: rgba(22, 163, 74, 0.30);
+  border-color: #22c55e;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35), 0 4px 12px rgba(0,0,0,0.3);
+  transform: translateY(-2px) scale(1.04);
+  color: #bbf7d0;
+}
+
+/* Backend — Blue */
+.skill-badge-backend {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #60a5fa;
+}
+.skill-badge-backend .skill-badge-icon { color: #93c5fd; }
+.skill-badge-backend:hover {
+  background: rgba(37, 99, 235, 0.30);
+  border-color: #3b82f6;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35), 0 4px 12px rgba(0,0,0,0.3);
+  transform: translateY(-2px) scale(1.04);
+  color: #bfdbfe;
+}
+
+/* Tools / Other — Purple */
+.skill-badge-tools {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: rgba(167, 139, 250, 0.45);
+  color: #a78bfa;
+}
+.skill-badge-tools .skill-badge-icon { color: #c4b5fd; }
+.skill-badge-tools:hover {
+  background: rgba(124, 58, 237, 0.30);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.35), 0 4px 12px rgba(0,0,0,0.3);
+  transform: translateY(-2px) scale(1.04);
+  color: #ddd6fe;
+}
+
+/* Missing Skills — Red / Dark Red */
+.skill-badge-missing {
+  background: rgba(153, 27, 27, 0.18);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #f87171;
+}
+.skill-badge-missing .skill-badge-icon { color: #fca5a5; }
+.skill-badge-missing:hover {
+  background: rgba(153, 27, 27, 0.30);
+  border-color: #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35), 0 4px 12px rgba(0,0,0,0.3);
+  transform: translateY(-2px) scale(1.04);
+  color: #fecaca;
+}
+
