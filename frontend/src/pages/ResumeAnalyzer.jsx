@@ -12,9 +12,9 @@ import {
 import {
   SiTypescript, SiMongodb, SiPostgresql, SiMysql, SiRedux, SiTailwindcss,
   SiGraphql, SiFirebase, SiNextdotjs, SiExpress, SiFlask, SiDjango,
-  SiKubernetes, SiNginx, SiRedis, SiPostman, SiVisualstudiocode,
+  SiKubernetes, SiNginx, SiRedis, SiPostman,
   SiFastapi, SiNumpy, SiPandas, SiScikitlearn, SiTensorflow, SiPytorch,
-  SiWebpack, SiVite, SiJunit5
+  SiWebpack, SiVite
 } from 'react-icons/si';
 import { analyzeResume, signUpUser, loginUser, uploadResumePDF, fetchUser } from '../utils/api';
 import { ResumeScannerCanvas } from '../components/ThreeCanvas';
@@ -66,7 +66,7 @@ const SKILL_CONFIG = {
   'firebase':     { icon: <SiFirebase />, cat: 'tools' },
   'linux':        { icon: <FaLinux />, cat: 'tools' },
   'postman':      { icon: <SiPostman />, cat: 'tools' },
-  'vs code':      { icon: <SiVisualstudiocode />, cat: 'tools' },
+  'vs code':      { icon: <FiTool />, cat: 'tools' },
   'vite':         { icon: <SiVite />, cat: 'tools' },
   'webpack':      { icon: <SiWebpack />, cat: 'tools' },
   'numpy':        { icon: <SiNumpy />, cat: 'tools' },
