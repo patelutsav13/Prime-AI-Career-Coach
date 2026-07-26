@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCpu, FiMessageSquare, FiTrendingUp, FiCheck, FiX, FiAward, FiArrowRight, FiRotateCcw, FiUser } from 'react-icons/fi';
 import { getMCQs, submitInterview, signUpUser, loginUser } from '../utils/api';
@@ -600,12 +601,12 @@ export default function InterviewPractice() {
                   >
                     <FiRotateCcw /> <span>Retake Interview</span>
                   </button>
-                  <a
-                    href="/dashboard"
+                  <Link
+                    to="/dashboard"
                     className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-xs font-bold text-white shadow-glowBlue transition-all font-orbitron uppercase tracking-wider text-center block"
                   >
                     View Analytics
-                  </a>
+                  </Link>
                 </div>
 
               </motion.div>
