@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSend, FiPlus, FiTrash2, FiEdit3, FiCheck, FiX, FiCopy, FiRefreshCw, FiThumbsUp, FiThumbsDown, FiMessageSquare, FiSearch, FiMenu, FiCpu, FiUser, FiChevronLeft, FiTrash, FiZap } from 'react-icons/fi';
-import { signUpUser, loginUser } from '../utils/api';
+import { signUpUser, loginUser, API_BASE } from '../utils/api';
 import axios from 'axios';
-
-const API_BASE = 'http://localhost:5000/api';
 
 // Simple markdown renderer
 function renderMarkdown(text) {

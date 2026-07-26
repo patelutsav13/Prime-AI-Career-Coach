@@ -1,12 +1,23 @@
 import axios from 'axios';
 import { clientAnalyzeResumeAI, clientMatchCareerRoleAI, clientGradeSelfIntroductionAI } from './clientAiEngine';
 
-const API_BASE = 'http://localhost:5000/api';
+// Dynamic API URL detection (Dev: localhost, Production: Render backend)
+export const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://prime-ai-career-coach.onrender.com/api';
+  }
+  return 'http://localhost:5000/api';
+};
+
+export const API_BASE = getApiBaseUrl();
 
 // Create Axios Instance
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 5000,
+  timeout: 30000,
 });
 
 // Helper: Check if backend server is online
@@ -15,19 +26,19 @@ let isServerOnline = true;
 // Check connection status asynchronously
 const checkBackendOnline = async () => {
   try {
-    // Quick ping request
-    await axios.get(`${API_BASE}/mcqs/frontend`, { timeout: 1500 });
+    // Ping request with 10s timeout to allow for Render cold starts
+    await axios.get(`${API_BASE}/mcqs/frontend`, { timeout: 10000 });
     isServerOnline = true;
   } catch (error) {
-    // If connection refused, set offline mode
-    if (error.code === 'ERR_NETWORK' || error.message.includes('timeout')) {
+    // If connection refused or network error, set offline simulator mode
+    if (error.code === 'ERR_NETWORK') {
       isServerOnline = false;
     }
   }
 };
 
 // Periodic checks
-setInterval(checkBackendOnline, 10000);
+setInterval(checkBackendOnline, 15000);
 checkBackendOnline();
 
 // --- LocalStorage Simulation Helpers ---
