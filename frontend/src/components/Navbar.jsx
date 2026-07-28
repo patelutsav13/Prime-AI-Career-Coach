@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMenu, FiX, FiUser, FiLogOut, FiCpu, FiSun, FiMoon } from 'react-icons/fi';
+import Logo3D from './Logo3D';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -91,18 +92,8 @@ export default function Navbar() {
         >
           
           {/* Logo Section */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-glowBlue transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
-              <FiCpu className="text-white text-xl animate-pulse transition-transform duration-500 group-hover:scale-110" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg xl:text-xl font-extrabold tracking-wider font-orbitron bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent transition-all duration-300 group-hover:brightness-110">
-                PRIME AI
-              </span>
-              <span className="text-[10px] text-cyan-400 uppercase tracking-widest font-semibold leading-none">
-                Career Coach
-              </span>
-            </div>
+          <Link to="/">
+            <Logo3D size="medium" />
           </Link>
 
           {/* Desktop Navigation Links */}

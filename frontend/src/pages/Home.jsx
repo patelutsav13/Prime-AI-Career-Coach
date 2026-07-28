@@ -1,37 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiArrowRight, FiCpu, FiTrendingUp, FiBriefcase, FiFileText, FiAward, FiPieChart } from 'react-icons/fi';
 import { HeroWorkspace } from '../components/ThreeCanvas';
+import Slider3D from '../components/Slider3D';
 
 export default function Home() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
   const sliderData = [
     {
       img: '/images/software_developers.png',
       title: 'Software Developers',
-      desc: 'Collaborating on high-impact scalable system architectures.'
+      desc: 'Collaborating on high-impact scalable system architectures.',
+      tag: 'Development'
     },
     {
       img: '/images/ai_engineers.png',
       title: 'AI Engineers',
-      desc: 'Engineering neural networks and prompt interfaces.'
+      desc: 'Engineering neural networks and prompt interfaces.',
+      tag: 'Artificial Intelligence'
     },
     {
       img: '/images/tech_office.png',
       title: 'Tech Workspaces',
-      desc: 'Optimized development configurations and office systems.'
+      desc: 'Optimized development configurations and office systems.',
+      tag: 'Cloud Workspace'
     }
   ];
-
-  // Auto transition slides
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % sliderData.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   const features = [
     {
@@ -165,51 +159,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="relative h-[300px] sm:h-[450px] rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-2xl">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.6 }}
-              className="absolute inset-0 w-full h-full flex flex-col md:flex-row"
-            >
-              <div className="w-full md:w-2/3 h-2/3 md:h-full relative overflow-hidden">
-                <img
-                  src={sliderData[currentSlide].img}
-                  alt={sliderData[currentSlide].title}
-                  className="w-full h-full object-cover filter brightness-75 hover:scale-105 transition-transform duration-[8000ms]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#030014] via-[#030014]/20 to-transparent pointer-events-none hidden md:block"></div>
-              </div>
-              <div className="w-full md:w-1/3 h-1/3 md:h-full bg-black/60 md:bg-white/[0.01] p-6 sm:p-10 flex flex-col justify-center">
-                <span className="text-cyan-400 text-xs font-bold uppercase tracking-widest font-orbitron mb-2">
-                  IT Sector Spotlight
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-extrabold font-orbitron text-white">
-                  {sliderData[currentSlide].title}
-                </h3>
-                <p className="mt-4 text-sm text-gray-400 font-light leading-relaxed">
-                  {sliderData[currentSlide].desc}
-                </p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Dots Indicator */}
-          <div className="absolute bottom-6 right-6 flex space-x-2 z-10">
-            {sliderData.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentSlide(idx)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  currentSlide === idx ? 'bg-cyan-400 w-8' : 'bg-white/20'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+        <Slider3D slides={sliderData} />
       </section>
 
       {/* 3. ABOUT SECTION */}

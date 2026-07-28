@@ -135,6 +135,13 @@ export default function PrimeAICoach() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
   
+  // Mobile responsiveness screen check
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
   // Load session
   useEffect(() => {
     const stored = localStorage.getItem('primeai_session_user');
@@ -163,6 +170,9 @@ export default function PrimeAICoach() {
   };
   
   const loadConversation = async (convId) => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
     try {
       const res = await axios.get(`${API_BASE}/coach/conversation/${convId}`);
       setCurrentConversation(res.data);
@@ -173,6 +183,9 @@ export default function PrimeAICoach() {
   };
   
   const handleNewChat = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
     setCurrentConversation(null);
     setMessages([]);
     setInput('');
@@ -394,13 +407,23 @@ export default function PrimeAICoach() {
       {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
-          <motion.div
-            initial={{ x: -320, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -320, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-            className="w-[300px] flex-shrink-0 glass-panel border-r border-white/5 flex flex-col h-full z-20"
-          >
+          <>
+            {/* Mobile Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden"
+            />
+
+            <motion.div
+              initial={{ x: -320, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -320, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+              className="fixed md:static inset-y-0 left-0 w-[280px] sm:w-[300px] flex-shrink-0 glass-panel border-r border-white/10 flex flex-col h-full z-50 md:z-20 bg-[#030014]/95 md:bg-transparent shadow-2xl md:shadow-none"
+            >
             {/* Sidebar Header */}
             <div className="p-4 border-b border-white/5 space-y-3">
               <button
@@ -494,8 +517,9 @@ export default function PrimeAICoach() {
               </div>
             )}
           </motion.div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
+    </AnimatePresence>
       
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">

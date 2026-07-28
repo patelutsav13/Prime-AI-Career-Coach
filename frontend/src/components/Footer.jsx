@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiGithub, FiLinkedin, FiMail, FiMessageCircle } from 'react-icons/fi';
+import Logo3D from './Logo3D';
 
 export default function Footer() {
   return (
@@ -10,9 +11,9 @@ export default function Footer() {
           
           {/* Column 1: Intro */}
           <div className="col-span-1 md:col-span-2">
-            <span className="text-lg font-bold font-orbitron bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-              PRIMEAI CAREER COACH
-            </span>
+            <Link to="/">
+              <Logo3D size="medium" />
+            </Link>
             <p className="mt-4 text-sm text-gray-400 leading-relaxed max-w-sm">
               Empowering college students and developers with rule-based artificial intelligence to optimize resumes, evaluate skills, build learning roadmaps, and practice technical interviews.
             </p>
