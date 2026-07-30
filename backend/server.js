@@ -903,17 +903,22 @@ To ensure your resume passes Applicant Tracking Systems (ATS) and gets you inter
 Would you like a specific code example, comparison, or tutorial on **${cleanSubject}**?`;
 };
 
-const generateCoachTitle = async (userMessage) => {
-  if (genAI) {
-    for (const modelName of GEMINI_MODELS) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(`Generate a very short title (max 5 words, no quotes) for a conversation starting with: "${userMessage.substring(0, 150)}"`);
-        const title = result.response.text().trim().replace(/["']/g, '');
-        if (title) return title.substring(0, 50);
-      } catch (err) {
-        // try next
+const generateCoachTitle = async (userMessage, apiKey) => {
+  if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.length > 10) {
+    try {
+      const dynamicGenAI = new GoogleGenerativeAI(apiKey);
+      for (const modelName of GEMINI_MODELS) {
+        try {
+          const model = dynamicGenAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(`Generate a very short title (max 5 words, no quotes) for a conversation starting with: "${userMessage.substring(0, 150)}"`);
+          const title = result.response.text().trim().replace(/["']/g, '');
+          if (title) return title.substring(0, 50);
+        } catch (err) {
+          // try next
+        }
       }
+    } catch (e) {
+      // fallback below
     }
   }
   return 'Chat: ' + userMessage.substring(0, 20) + '...';
@@ -997,8 +1002,11 @@ app.post('/api/coach/chat', async (req, res) => {
 
     // Auto-generate title from first message
     if (conversation.messages.filter(m => m.role === 'user').length === 1) {
-      conversation.title = await generateCoachTitle(message);
+      conversation.title = await generateCoachTitle(message, apiKey);
     }
+
+    await conversation.save();
+    res.json({ conversation, aiResponse: aiText });
 
     await conversation.save();
     res.json({ conversation, aiResponse: aiText });
