@@ -642,6 +642,22 @@ Rules:
 const generateSmartAIResponse = (message, resumeContext) => {
   const lowerMsg = message.toLowerCase();
 
+  // Identity / Conversational
+  if (/who are you|what is your name|who made you|what can you do|who created you/i.test(lowerMsg)) {
+    return `### I am PrimeAI Coach! 🤖✨
+
+I am your personal AI career mentor built into the **PrimeAI Career Coach** platform.
+
+#### How I Can Help You:
+- 📄 **Resume Evaluation**: Grade ATS compatibility, spot missing skills, and refine project descriptions.
+- 🎯 **Career Role Matching**: Match your skill set to developer roles like Frontend, Backend, Full Stack, Data Science, and AI Engineering.
+- 💻 **Technical Concepts**: Answer questions on React, Express, Node.js, Python, SQL, REST APIs, and System Design.
+- 📝 **Mock Interview Coaching**: Practice technical MCQs and self-introductions with immediate AI feedback.
+- 🗓️ **Learning Roadmaps**: Generate step-by-step weekly guides for mastering target skills.
+
+Ask me any technical, resume, or career preparation question!`;
+  }
+
   // Greetings
   if (/^(hi|hello|hey|greetings|good morning|good evening)/i.test(lowerMsg.trim())) {
     return `### Hello! 👋 I'm PrimeAI Coach
@@ -791,36 +807,16 @@ To ensure your resume passes Applicant Tracking Systems (ATS) and gets you inter
 - **Backend**: RESTful Principles, Database Indexing, Authentication (JWT/OAuth), Middleware Pipeline.`;
   }
 
-  // Default Intelligent Technical Answer
-  return `### 💡 Technical Guide: ${message}
+  // Default Clean Answer
+  return `### 💡 PrimeAI Guide: ${message}
 
-Thank you for your question about **"${message}"**!
+Thank you for reaching out! Here is how we can address **"${message}"**:
 
-Here is a breakdown of the key concepts and recommendations:
+1. **Core Concept**: Clarify the specific technical requirement, architecture, or software engineering objective.
+2. **Best Practices**: Apply modular design patterns, proper state management, and robust error handling.
+3. **Action Steps**: Break down complex problems into small, testable milestones.
 
-#### Key Overview:
-1. **Core Architecture**: When building modern software applications, clean code practices, modular design, and efficient data flow are paramount.
-2. **Implementation Strategy**:
-   - Break down complex logic into reusable functions/components.
-   - Maintain strict separation of concerns between presentation and business logic.
-   - Implement error handling and logging to ensure robustness.
-
-#### Practical Example:
-\`\`\`javascript
-// Clean Code Pattern Example
-async function processTask(data) {
-  try {
-    const validatedData = validateInput(data);
-    const result = await executeBusinessLogic(validatedData);
-    return { success: true, result };
-  } catch (error) {
-    console.error("Task processing error:", error.message);
-    return { success: false, error: error.message };
-  }
-}
-\`\`\`
-
-Is there a specific framework or tool you would like me to explain further?`;
+Feel free to ask a specific coding, resume, or career preparation question!`;
 };
 
 const generateCoachTitle = async (userMessage) => {
@@ -876,23 +872,29 @@ app.post('/api/coach/chat', async (req, res) => {
       try {
         const dynamicGenAI = new GoogleGenerativeAI(apiKey);
 
-        // Build history array
-        const chatHistory = conversation.messages.slice(0, -1).map(msg => ({
-          role: msg.role,
-          parts: [{ text: msg.text }]
-        }));
+        // Sanitize history to ensure strict alternating sequence starting with user
+        const cleanHistory = [];
+        let expectedRole = 'user';
+        for (const msg of conversation.messages.slice(0, -1)) {
+          if (msg.role === expectedRole && msg.text) {
+            cleanHistory.push({
+              role: msg.role,
+              parts: [{ text: msg.text }]
+            });
+            expectedRole = expectedRole === 'user' ? 'model' : 'user';
+          }
+        }
 
         for (const modelName of GEMINI_MODELS) {
           try {
             console.log(`[Gemini AI] Attempting chat completion with model: ${modelName}`);
             const model = dynamicGenAI.getGenerativeModel({ model: modelName });
             
-            // Format prompt with system context for maximum compatibility
             const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
             
             let responseText = '';
-            if (chatHistory.length > 0) {
-              const chat = model.startChat({ history: chatHistory });
+            if (cleanHistory.length > 0) {
+              const chat = model.startChat({ history: cleanHistory });
               const result = await chat.sendMessage(message);
               responseText = result.response.text();
             } else {
