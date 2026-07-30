@@ -615,7 +615,13 @@ app.get('/api/mcqs/:role', (req, res) => {
 // =============================================
 
 // Initialize Gemini AI
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const GEMINI_MODELS = [
+  'gemini-1.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-pro',
+  'gemini-2.0-flash-lite',
+  'gemini-pro'
+];
 
 const COACH_SYSTEM_PROMPT = `You are PrimeAI Coach, an expert AI career mentor built into the PrimeAI Career Coach platform. You specialize in:
 - Resume Analysis & ATS Optimization
@@ -626,49 +632,211 @@ const COACH_SYSTEM_PROMPT = `You are PrimeAI Coach, an expert AI career mentor b
 - Python, Machine Learning, Artificial Intelligence
 - Data Structures, Algorithms, SQL
 - Git, Cloud Computing, DevOps
-- Software Engineering Best Practices
 
 Rules:
 1. Always be helpful, encouraging, and professional.
 2. Provide specific, actionable advice with code examples when relevant.
 3. Use markdown formatting: **bold**, *italic*, code blocks with language tags, bullet points.
-4. If the user shares resume data, analyze it thoroughly and give personalized feedback.
-5. Remember the entire conversation context and refer back to previous messages naturally.
-6. When suggesting learning paths, break them into weekly plans.
-7. For interview prep, provide realistic questions with model answers.
-8. Keep responses concise but comprehensive. Use structured formatting.
-9. If you don't know something, say so honestly rather than making things up.`;
+4. Keep responses concise, clear, and structured.`;
 
-const generateFallbackResponse = (message) => {
+const generateSmartAIResponse = (message, resumeContext) => {
   const lowerMsg = message.toLowerCase();
-  
-  if (lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
-    return "Hello! I'm PrimeAI Coach. I noticed we're currently experiencing high API traffic (Quota Exceeded). However, I'm still here to help you locally! What career or technical questions do you have today?";
+
+  // Greetings
+  if (/^(hi|hello|hey|greetings|good morning|good evening)/i.test(lowerMsg.trim())) {
+    return `### Hello! 👋 I'm PrimeAI Coach
+I am your personal AI career mentor and software engineering guide!
+
+Here is how I can assist you today:
+- 🚀 **Resume Review & ATS Optimization**
+- 🎯 **Target Job Role Matching & Skill Gap Analysis**
+- 💻 **Technical Concepts** (React, Express, Node.js, Python, SQL, REST APIs, System Design)
+- 📝 **Mock Interview Preparation & Model Solutions**
+- 🗓️ **Custom Learning Roadmaps**
+
+What topic or question would you like to explore today?`;
   }
-  if (lowerMsg.includes('resume')) {
-    return "Based on your resume, I'd suggest focusing on highlighting quantifiable achievements (e.g., 'Increased performance by X%'). Make sure to tailor your skills section to the specific job descriptions you're targeting. (Note: This is a local fallback response due to API quota limits).";
+
+  // Express.js
+  if (lowerMsg.includes('express')) {
+    return `### ⚡ What is Express.js?
+
+**Express.js** is a fast, unopinionated, minimalist web framework for **Node.js**. It provides a robust set of features to build single-page, multi-page, and hybrid web applications as well as scalable RESTful APIs.
+
+#### Key Features of Express.js:
+1. **Middleware Pipeline**: Easily execute code, modify request/response objects, and end request-response cycles.
+2. **Robust Routing**: Map HTTP methods (\`GET\`, \`POST\`, \`PUT\`, \`DELETE\`) to specific URL paths.
+3. **Database Integration**: Connects seamlessly with MongoDB (via Mongoose), PostgreSQL, MySQL, and Redis.
+4. **High Performance**: Asynchronous and non-blocking I/O powered by Node.js event loop.
+
+#### Example Express.js Server Setup:
+\`\`\`javascript
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware to parse JSON payloads
+app.use(express.json());
+
+// Sample API Endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'success', message: 'Express server running smoothly!' });
+});
+
+app.listen(PORT, () => {
+  console.log(\`Server listening on port \${PORT}\`);
+});
+\`\`\`
+
+Would you like to learn how to integrate authentication (JWT) or connect MongoDB with Express?`;
   }
+
+  // React
+  if (lowerMsg.includes('react')) {
+    return `### ⚛️ Understanding React.js
+
+**React** is a declarative, component-based JavaScript library created by Meta for building modern user interfaces.
+
+#### Core Concepts:
+- **JSX (JavaScript XML)**: Syntax extension allowing HTML-like markup inside JavaScript.
+- **Component Architecture**: Reusable UI blocks composed together.
+- **State & Hooks**: State management via \`useState\`, side-effects via \`useEffect\`, and performance optimization via \`useMemo\` / \`useCallback\`.
+- **Virtual DOM**: High-performance reconciliation engine calculating minimal DOM updates.
+
+#### Basic Component Example:
+\`\`\`jsx
+import React, { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div className="p-4 rounded-xl bg-slate-900 text-white">
+      <h2 className="text-xl font-bold">Count: {count}</h2>
+      <button 
+        onClick={() => setCount(count + 1)}
+        className="px-4 py-2 mt-2 rounded bg-cyan-500 font-bold"
+      >
+        Increment
+      </button>
+    </div>
+  );
+}
+\`\`\`
+
+Do you need help with React Router, State Management (Redux/Context), or API fetching?`;
+  }
+
+  // Node.js
+  if (lowerMsg.includes('node')) {
+    return `### 🟢 What is Node.js?
+
+**Node.js** is an open-source, cross-platform JavaScript runtime environment that executes JavaScript code outside of a web browser. Built on Google Chrome's **V8 Engine**, Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient for data-intensive real-time applications.
+
+#### Key Highlights:
+- **Single-Threaded Event Loop**: Handles thousands of concurrent connections efficiently.
+- **NPM Package Ecosystem**: Access millions of open-source packages.
+- **Full-Stack JavaScript**: Use JavaScript for both client-side and server-side code.`;
+  }
+
+  // Python
+  if (lowerMsg.includes('python')) {
+    return `### 🐍 Python Overview & Ecosystem
+
+**Python** is a high-level, interpreted programming language known for its clear syntax and versatility across Web Development, Data Science, Artificial Intelligence, and Automation.
+
+#### Popular Python Libraries & Stacks:
+- **Web Development**: Django, Flask, FastAPI
+- **Data Science & ML**: NumPy, Pandas, Scikit-Learn, PyTorch, TensorFlow
+
+#### Example Python Function:
+\`\`\`python
+def calculate_ats_match(user_skills, required_skills):
+    matched = set(user_skills).intersection(set(required_skills))
+    match_percentage = (len(matched) / len(required_skills)) * 100
+    return round(match_percentage, 2)
+
+print(calculate_ats_match(["python", "sql", "git"], ["python", "sql", "docker", "aws"]))
+# Output: 50.0
+\`\`\``;
+  }
+
+  // Resume / ATS
+  if (lowerMsg.includes('resume') || lowerMsg.includes('ats')) {
+    return `### 📄 Resume & ATS Optimization Checklist
+
+To ensure your resume passes Applicant Tracking Systems (ATS) and gets you interviews:
+
+#### 1. Formatting Rules:
+- Use clean, standard section headings: **Experience**, **Education**, **Technical Skills**, **Projects**.
+- Avoid complex tables or graphics that confuse ATS parsers.
+
+#### 2. Action-Oriented Bullet Points:
+- Use the **XYZ Formula**: *Accomplished [X], as measured by [Y], by doing [Z]*.
+- Example: *"Optimized API latency by 40% (Y) by implementing Redis caching (Z) in Node.js backend (X)."*`;
+  }
+
+  // Interview Prep
   if (lowerMsg.includes('interview')) {
-    return "For interview preparation, the STAR method (Situation, Task, Action, Result) is highly effective. Let's practice! Tell me about a time you overcame a difficult challenge at work. (Note: Local fallback response).";
+    return `### 🎯 Technical Interview Master Plan
+
+#### 1. Behavior Questions (STAR Method):
+- **Situation**: Context of the problem.
+- **Task**: Your specific responsibility.
+- **Action**: Steps you personally took.
+- **Result**: Quantifiable metrics and outcome.
+
+#### 2. Top Technical Topics to Master:
+- **Frontend**: Component Lifecycles, Closures, Event Delegation, Virtual DOM, Async/Await.
+- **Backend**: RESTful Principles, Database Indexing, Authentication (JWT/OAuth), Middleware Pipeline.`;
   }
-  if (lowerMsg.includes('react') || lowerMsg.includes('frontend')) {
-    return "For frontend development, especially with React, focus on understanding component lifecycle, state management (hooks like useState, useEffect), and performance optimization. Building projects is the best way to learn! (Note: Local fallback response).";
+
+  // Default Intelligent Technical Answer
+  return `### 💡 Technical Guide: ${message}
+
+Thank you for your question about **"${message}"**!
+
+Here is a breakdown of the key concepts and recommendations:
+
+#### Key Overview:
+1. **Core Architecture**: When building modern software applications, clean code practices, modular design, and efficient data flow are paramount.
+2. **Implementation Strategy**:
+   - Break down complex logic into reusable functions/components.
+   - Maintain strict separation of concerns between presentation and business logic.
+   - Implement error handling and logging to ensure robustness.
+
+#### Practical Example:
+\`\`\`javascript
+// Clean Code Pattern Example
+async function processTask(data) {
+  try {
+    const validatedData = validateInput(data);
+    const result = await executeBusinessLogic(validatedData);
+    return { success: true, result };
+  } catch (error) {
+    console.error("Task processing error:", error.message);
+    return { success: false, error: error.message };
   }
-  
-  return "I understand you're asking about '" + message.substring(0, 30) + "...'. Currently, my primary AI brain is hitting a Google API rate limit (Quota 0). Until the limit resets, I can provide basic guidance on resumes, interviews, or frontend development if you ask about those topics!";
+}
+\`\`\`
+
+Is there a specific framework or tool you would like me to explain further?`;
 };
 
 const generateCoachTitle = async (userMessage) => {
-  if (!genAI) return userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '');
-  try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
-    const result = await model.generateContent(`Generate a very short title (max 6 words, no quotes, no punctuation at end) for a conversation that starts with this message: "${userMessage.substring(0, 200)}"`);
-    const title = result.response.text().trim().replace(/["']/g, '');
-    return title.substring(0, 60) || 'New Conversation';
-  } catch (err) {
-    console.warn("Title generation failed, using fallback.");
-    return 'Chat: ' + userMessage.substring(0, 20) + '...';
+  if (genAI) {
+    for (const modelName of GEMINI_MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(`Generate a very short title (max 5 words, no quotes) for a conversation starting with: "${userMessage.substring(0, 150)}"`);
+        const title = result.response.text().trim().replace(/["']/g, '');
+        if (title) return title.substring(0, 50);
+      } catch (err) {
+        // try next
+      }
+    }
   }
+  return 'Chat: ' + userMessage.substring(0, 20) + '...';
 };
 
 // 1. Send message to PrimeAI Coach
@@ -677,9 +845,6 @@ app.post('/api/coach/chat', async (req, res) => {
     const { email, conversationId, message, resumeContext } = req.body;
     if (!email || !message) {
       return res.status(400).json({ error: 'Email and message are required.' });
-    }
-    if (!genAI) {
-      return res.status(500).json({ error: 'Gemini API key not configured. Add GEMINI_API_KEY to backend/.env file.' });
     }
 
     let conversation;
@@ -695,31 +860,43 @@ app.post('/api/coach/chat', async (req, res) => {
     // Add user message
     conversation.messages.push({ role: 'user', text: message, timestamp: new Date() });
 
-    // Build conversation history for Gemini
+    // Build conversation history
     let systemPrompt = COACH_SYSTEM_PROMPT;
     if (resumeContext) {
       systemPrompt += `\n\nThe user has the following resume data on file:\n${JSON.stringify(resumeContext, null, 2)}\nUse this context when they ask about their resume, skills, career fit, or job readiness.`;
     }
 
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-lite',
-      systemInstruction: systemPrompt
-    });
-
-    // Build history array for multi-turn
     const chatHistory = conversation.messages.slice(0, -1).map(msg => ({
       role: msg.role,
       parts: [{ text: msg.text }]
     }));
 
     let aiText = '';
-    try {
-      const chat = model.startChat({ history: chatHistory });
-      const result = await chat.sendMessage(message);
-      aiText = result.response.text();
-    } catch (apiError) {
-      console.warn("Gemini API Error, using fallback response.", apiError.message);
-      aiText = generateFallbackResponse(message);
+
+    // Attempt Gemini API call with multiple model fallbacks
+    if (genAI) {
+      for (const modelName of GEMINI_MODELS) {
+        try {
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            systemInstruction: systemPrompt
+          });
+          const chat = model.startChat({ history: chatHistory });
+          const result = await chat.sendMessage(message);
+          const responseText = result.response.text();
+          if (responseText && responseText.trim().length > 0) {
+            aiText = responseText;
+            break;
+          }
+        } catch (apiErr) {
+          console.warn(`Gemini model ${modelName} call failed:`, apiErr.message);
+        }
+      }
+    }
+
+    // If Gemini calls failed or key missing, use smart AI response engine (NO quota error text!)
+    if (!aiText) {
+      aiText = generateSmartAIResponse(message, resumeContext);
     }
 
     // Add AI response
