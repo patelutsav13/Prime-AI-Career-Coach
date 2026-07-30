@@ -673,38 +673,46 @@ Here is how I can assist you today:
 What topic or question would you like to explore today?`;
   }
 
-  // Express.js
-  if (lowerMsg.includes('express')) {
-    return `### ⚡ What is Express.js?
+  // GitHub / Git
+  if (lowerMsg.includes('github') || lowerMsg.includes('git')) {
+    return `### 🐙 What is GitHub & Git?
 
-**Express.js** is a fast, unopinionated, minimalist web framework for **Node.js**. It provides a robust set of features to build single-page, multi-page, and hybrid web applications as well as scalable RESTful APIs.
+**Git** is a distributed version control system that tracks changes in source code during software development. 
+**GitHub** is a cloud-based hosting platform built around Git that allows developers to store, manage, collaborate, and share code repositories.
 
-#### Key Features of Express.js:
-1. **Middleware Pipeline**: Easily execute code, modify request/response objects, and end request-response cycles.
-2. **Robust Routing**: Map HTTP methods (\`GET\`, \`POST\`, \`PUT\`, \`DELETE\`) to specific URL paths.
-3. **Database Integration**: Connects seamlessly with MongoDB (via Mongoose), PostgreSQL, MySQL, and Redis.
-4. **High Performance**: Asynchronous and non-blocking I/O powered by Node.js event loop.
+#### Key Features:
+1. **Version Control & History**: Roll back to previous commits at any point.
+2. **Branching & Merging**: Work on features in isolated branches without breaking production code.
+3. **Pull Requests (PRs)**: Perform code reviews, run automated CI/CD checks, and collaborate.
+4. **Portfolio Showcase**: Host open-source projects, build your GitHub green contribution graph, and present your work to tech recruiters.
 
-#### Example Express.js Server Setup:
-\`\`\`javascript
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 5000;
+#### Essential Git Commands:
+\`\`\`bash
+git init                   # Initialize a new git repository
+git clone <url>            # Clone a remote repository
+git checkout -b feature    # Create and switch to a new branch
+git add .                  # Stage all modified files
+git commit -m "commit msg" # Commit changes
+git push origin feature    # Push changes to GitHub
+\`\`\``;
+  }
 
-// Middleware to parse JSON payloads
-app.use(express.json());
+  // React DOM vs Virtual DOM
+  if (lowerMsg.includes('react dom') || lowerMsg.includes('virtual dom') || (lowerMsg.includes('react') && lowerMsg.includes('dom'))) {
+    return `### ⚛️ React DOM vs. Virtual DOM
 
-// Sample API Endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'success', message: 'Express server running smoothly!' });
-});
+| Feature | Virtual DOM | Real / React DOM |
+| :--- | :--- | :--- |
+| **Definition** | In-memory lightweight copy of the real DOM | Actual HTML DOM rendered in the browser |
+| **Speed** | Fast updates (does not re-render UI directly) | Slower (manipulating browser DOM requires layout repaints) |
+| **Reconciliation** | Calculates minimal diff using diffing algorithm | Receives batch updates from Reconciliation Engine |
+| **Memory** | Memory efficient JS object | Browser DOM node tree |
 
-app.listen(PORT, () => {
-  console.log(\`Server listening on port \${PORT}\`);
-});
-\`\`\`
-
-Would you like to learn how to integrate authentication (JWT) or connect MongoDB with Express?`;
+#### How React Uses Virtual DOM:
+1. When state changes in a component, React creates a new Virtual DOM tree.
+2. React compares the new Virtual DOM with the previous Virtual DOM snapshot (**Diffing Algorithm**).
+3. React calculates the exact minimum changes needed (**Reconciliation**).
+4. React DOM updates ONLY the changed elements in the real browser DOM!`;
   }
 
   // React
@@ -738,9 +746,63 @@ export default function Counter() {
     </div>
   );
 }
-\`\`\`
+\`\`\``;
+  }
 
-Do you need help with React Router, State Management (Redux/Context), or API fetching?`;
+  // Express.js
+  if (lowerMsg.includes('express')) {
+    return `### ⚡ What is Express.js?
+
+**Express.js** is a fast, unopinionated, minimalist web framework for **Node.js**. It provides a robust set of features to build single-page, multi-page, and hybrid web applications as well as scalable RESTful APIs.
+
+#### Key Features of Express.js:
+1. **Middleware Pipeline**: Easily execute code, modify request/response objects, and end request-response cycles.
+2. **Robust Routing**: Map HTTP methods (\`GET\`, \`POST\`, \`PUT\`, \`DELETE\`) to specific URL paths.
+3. **Database Integration**: Connects seamlessly with MongoDB (via Mongoose), PostgreSQL, MySQL, and Redis.
+4. **High Performance**: Asynchronous and non-blocking I/O powered by Node.js event loop.
+
+#### Example Express.js Server Setup:
+\`\`\`javascript
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(express.json());
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'success', message: 'Express server running smoothly!' });
+});
+
+app.listen(PORT, () => {
+  console.log(\`Server listening on port \${PORT}\`);
+});
+\`\`\``;
+  }
+
+  // MongoDB
+  if (lowerMsg.includes('mongodb') || lowerMsg.includes('mongo')) {
+    return `### 🍃 What is MongoDB?
+
+**MongoDB** is a popular document-oriented NoSQL database designed for high performance, high availability, and easy scalability. Instead of traditional tables and rows, MongoDB stores data in flexible, JSON-like **BSON** (Binary JSON) documents.
+
+#### Core Concepts:
+- **Database**: Container for collections.
+- **Collection**: Group of MongoDB documents (equivalent to a SQL table).
+- **Document**: A record in a collection composed of field-value pairs (equivalent to a SQL row).
+- **Mongoose ODM**: Object Data Modeling library for Node.js to manage database schemas.
+
+#### Example Mongoose Schema in Node.js:
+\`\`\`javascript
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('User', UserSchema);
+\`\`\``;
   }
 
   // Node.js
@@ -755,6 +817,18 @@ Do you need help with React Router, State Management (Redux/Context), or API fet
 - **Full-Stack JavaScript**: Use JavaScript for both client-side and server-side code.`;
   }
 
+  // Django
+  if (lowerMsg.includes('django')) {
+    return `### 🎯 What is Django?
+
+**Django** is a high-level Python web framework that encourages rapid development and clean, pragmatic design. It follows the **MVT (Model-View-Template)** architectural pattern and comes with "batteries included" (built-in ORM, admin panel, authentication, security against SQL injection and CSRF).
+
+#### Key Strengths:
+1. **Built-in Admin Interface**: Automatic admin dashboard generated from your database models.
+2. **Object-Relational Mapper (ORM)**: Query database using Python syntax instead of raw SQL.
+3. **Security**: Default protection against Cross-Site Scripting (XSS), CSRF, and SQL Injection.`;
+  }
+
   // Python
   if (lowerMsg.includes('python')) {
     return `### 🐍 Python Overview & Ecosystem
@@ -763,18 +837,19 @@ Do you need help with React Router, State Management (Redux/Context), or API fet
 
 #### Popular Python Libraries & Stacks:
 - **Web Development**: Django, Flask, FastAPI
-- **Data Science & ML**: NumPy, Pandas, Scikit-Learn, PyTorch, TensorFlow
+- **Data Science & ML**: NumPy, Pandas, Scikit-Learn, PyTorch, TensorFlow`;
+  }
 
-#### Example Python Function:
-\`\`\`python
-def calculate_ats_match(user_skills, required_skills):
-    matched = set(user_skills).intersection(set(required_skills))
-    match_percentage = (len(matched) / len(required_skills)) * 100
-    return round(match_percentage, 2)
+  // Java
+  if (lowerMsg.includes('java')) {
+    return `### ☕ What is Java?
 
-print(calculate_ats_match(["python", "sql", "git"], ["python", "sql", "docker", "aws"]))
-# Output: 50.0
-\`\`\``;
+**Java** is a class-based, object-oriented, high-level programming language designed to have as few implementation dependencies as possible. It follows the **WORA (Write Once, Run Anywhere)** philosophy using the Java Virtual Machine (JVM).
+
+#### Core Concepts:
+- **Object-Oriented (OOP)**: Encapsulation, Inheritance, Polymorphism, Abstraction.
+- **JVM, JRE, JDK**: JDK compiles code to bytecode, JRE provides libraries, JVM executes bytecode.
+- **Enterprise Frameworks**: Spring Boot, Hibernate, Maven, Gradle.`;
   }
 
   // Resume / ATS
@@ -807,16 +882,21 @@ To ensure your resume passes Applicant Tracking Systems (ATS) and gets you inter
 - **Backend**: RESTful Principles, Database Indexing, Authentication (JWT/OAuth), Middleware Pipeline.`;
   }
 
-  // Default Clean Answer
-  return `### 💡 PrimeAI Guide: ${message}
+  // General Direct Answer Engine
+  const cleanSubject = message.replace(/[?._!]/g, '').trim();
+  return `### 💡 Guide: ${cleanSubject}
 
-Thank you for reaching out! Here is how we can address **"${message}"**:
+**${cleanSubject}** is an essential topic in modern software development and engineering.
 
-1. **Core Concept**: Clarify the specific technical requirement, architecture, or software engineering objective.
-2. **Best Practices**: Apply modular design patterns, proper state management, and robust error handling.
-3. **Action Steps**: Break down complex problems into small, testable milestones.
+#### Overview & Core Concepts:
+1. **Purpose & Architecture**: Used to build scalable systems, organize application logic, and maintain high performance.
+2. **Key Capabilities**: Provides structured patterns, reusable abstractions, and efficient data processing workflows.
+3. **Best Practices**:
+   - Write clean, modular, and well-documented code.
+   - Implement thorough error handling and performance monitoring.
+   - Follow industry-standard security and testing conventions.
 
-Feel free to ask a specific coding, resume, or career preparation question!`;
+Would you like a specific code example, comparison, or tutorial on **${cleanSubject}**?`;
 };
 
 const generateCoachTitle = async (userMessage) => {
@@ -872,35 +952,22 @@ app.post('/api/coach/chat', async (req, res) => {
       try {
         const dynamicGenAI = new GoogleGenerativeAI(apiKey);
 
-        // Sanitize history to ensure strict alternating sequence starting with user
-        const cleanHistory = [];
-        let expectedRole = 'user';
-        for (const msg of conversation.messages.slice(0, -1)) {
-          if (msg.role === expectedRole && msg.text) {
-            cleanHistory.push({
-              role: msg.role,
-              parts: [{ text: msg.text }]
-            });
-            expectedRole = expectedRole === 'user' ? 'model' : 'user';
-          }
+        // Build combined text history for 100% reliable Gemini completions
+        let conversationHistoryText = '';
+        if (conversation.messages.length > 1) {
+          conversationHistoryText = 'Previous Conversation Context:\n' + 
+            conversation.messages.slice(0, -1).map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`).join('\n\n') + '\n\n';
         }
+
+        const fullPrompt = `${systemPrompt}\n\n${conversationHistoryText}User Question: ${message}`;
 
         for (const modelName of GEMINI_MODELS) {
           try {
             console.log(`[Gemini AI] Attempting chat completion with model: ${modelName}`);
             const model = dynamicGenAI.getGenerativeModel({ model: modelName });
             
-            const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
-            
-            let responseText = '';
-            if (cleanHistory.length > 0) {
-              const chat = model.startChat({ history: cleanHistory });
-              const result = await chat.sendMessage(message);
-              responseText = result.response.text();
-            } else {
-              const result = await model.generateContent(fullPrompt);
-              responseText = result.response.text();
-            }
+            const result = await model.generateContent(fullPrompt);
+            const responseText = result.response.text();
 
             if (responseText && responseText.trim().length > 0) {
               aiText = responseText.trim();
