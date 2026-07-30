@@ -272,20 +272,15 @@ Would you like to learn how to integrate authentication (JWT) or connect MongoDB
 - **Virtual DOM**: High-performance reconciliation engine calculating minimal DOM updates.`;
     }
 
-    return `### 💡 Technical Guide: ${messageText}
+    return `### 💡 Guide: ${messageText}
 
-Thank you for your question about **"${messageText}"**!
+Thank you for your question! Here is an overview of **"${messageText}"**:
 
-Here is a breakdown of the key concepts:
+1. **Overview**: Key principles, core concepts, and essential facts.
+2. **Context**: Application in real-world software engineering, scientific concepts, or career development.
+3. **Key Takeaways**: Best practices, efficient execution, and practical knowledge.
 
-#### Key Overview:
-1. **Core Architecture**: When building modern software applications, clean code practices, modular design, and efficient data flow are paramount.
-2. **Implementation Strategy**:
-   - Break down complex logic into reusable functions/components.
-   - Maintain strict separation of concerns between presentation and business logic.
-   - Implement error handling and logging to ensure robustness.
-
-Is there a specific framework or tool you would like me to explain further?`;
+Feel free to ask a follow-up or explore another topic!`;
   };
 
   const handleSend = async (overrideMessage) => {
