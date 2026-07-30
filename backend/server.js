@@ -860,46 +860,66 @@ app.post('/api/coach/chat', async (req, res) => {
     // Add user message
     conversation.messages.push({ role: 'user', text: message, timestamp: new Date() });
 
-    // Build conversation history
+    // Build system instructions & conversation context
     let systemPrompt = COACH_SYSTEM_PROMPT;
     if (resumeContext) {
-      systemPrompt += `\n\nThe user has the following resume data on file:\n${JSON.stringify(resumeContext, null, 2)}\nUse this context when they ask about their resume, skills, career fit, or job readiness.`;
+      systemPrompt += `\n\nUser Resume Context:\n${JSON.stringify(resumeContext, null, 2)}`;
     }
-
-    const chatHistory = conversation.messages.slice(0, -1).map(msg => ({
-      role: msg.role,
-      parts: [{ text: msg.text }]
-    }));
 
     let aiText = '';
 
-    // Attempt Gemini API call with multiple model fallbacks
-    if (genAI) {
-      for (const modelName of GEMINI_MODELS) {
-        try {
-          const model = genAI.getGenerativeModel({ 
-            model: modelName,
-            systemInstruction: systemPrompt
-          });
-          const chat = model.startChat({ history: chatHistory });
-          const result = await chat.sendMessage(message);
-          const responseText = result.response.text();
-          if (responseText && responseText.trim().length > 0) {
-            aiText = responseText;
-            break;
+    // Read API key dynamically from environment
+    const rawApiKey = process.env.GEMINI_API_KEY || '';
+    const apiKey = rawApiKey.trim().replace(/["']/g, '');
+
+    if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.length > 10) {
+      try {
+        const dynamicGenAI = new GoogleGenerativeAI(apiKey);
+
+        // Build history array
+        const chatHistory = conversation.messages.slice(0, -1).map(msg => ({
+          role: msg.role,
+          parts: [{ text: msg.text }]
+        }));
+
+        for (const modelName of GEMINI_MODELS) {
+          try {
+            console.log(`[Gemini AI] Attempting chat completion with model: ${modelName}`);
+            const model = dynamicGenAI.getGenerativeModel({ model: modelName });
+            
+            // Format prompt with system context for maximum compatibility
+            const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
+            
+            let responseText = '';
+            if (chatHistory.length > 0) {
+              const chat = model.startChat({ history: chatHistory });
+              const result = await chat.sendMessage(message);
+              responseText = result.response.text();
+            } else {
+              const result = await model.generateContent(fullPrompt);
+              responseText = result.response.text();
+            }
+
+            if (responseText && responseText.trim().length > 0) {
+              aiText = responseText.trim();
+              console.log(`[Gemini AI] Success with model ${modelName}`);
+              break;
+            }
+          } catch (modelErr) {
+            console.warn(`[Gemini AI] Model ${modelName} failed:`, modelErr.message);
           }
-        } catch (apiErr) {
-          console.warn(`Gemini model ${modelName} call failed:`, apiErr.message);
         }
+      } catch (sdkErr) {
+        console.warn('[Gemini AI] SDK initialization error:', sdkErr.message);
       }
     }
 
-    // If Gemini calls failed or key missing, use smart AI response engine (NO quota error text!)
+    // If Gemini API calls did not return text, use smart fallback engine
     if (!aiText) {
       aiText = generateSmartAIResponse(message, resumeContext);
     }
 
-    // Add AI response
+    // Add AI response to conversation
     conversation.messages.push({ role: 'model', text: aiText, timestamp: new Date() });
 
     // Auto-generate title from first message
