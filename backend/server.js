@@ -67,6 +67,10 @@ mongoose.connect(MONGO_URI)
     console.log('Ensure MongoDB service is running on your system.');
   });
 
+// Health Check Endpoint
+app.get('/api/health', (req, res) => res.json({ status: 'online', timestamp: new Date().toISOString() }));
+app.get('/', (req, res) => res.send('PrimeAI Backend Server Online'));
+
 // API Routes
 
 // 1. Initialize user profile (Legacy Upsert)
