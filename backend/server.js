@@ -5,6 +5,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const UserHistory = require('./models/UserHistory');
 const { analyzeResumeAI, matchCareerRoleAI, gradeSelfIntroductionAI, ROLE_MCQ_BANK } = require('./utils/aiEngine');
+const { predictPlacementDecisionTree } = require('./utils/decisionTreeEngine');
 const Conversation = require('./models/Conversation');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
@@ -924,6 +925,56 @@ const generateCoachTitle = async (userMessage, apiKey) => {
   return 'Chat: ' + userMessage.substring(0, 20) + '...';
 };
 
+const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',
+  'deepseek-r1-distill-llama-70b',
+  'qwen-2.5-72b-instruct',
+  'llama-3.1-8b-instant'
+];
+
+// Helper: Call Groq API Multi-Model Cascade
+const callGroqLLM = async (groqApiKey, formattedMessages, systemPrompt) => {
+  if (!groqApiKey) return null;
+  const cleanedKey = groqApiKey.trim().replace(/["']/g, '');
+  if (!cleanedKey || cleanedKey === 'YOUR_GROQ_API_KEY' || cleanedKey.length < 10) return null;
+
+  for (const modelName of GROQ_MODELS) {
+    try {
+      console.log(`[Groq LLM] Attempting chat completion with model: ${modelName}`);
+      const payload = {
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...formattedMessages
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      };
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${cleanedKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (data && data.choices && data.choices[0] && data.choices[0].message) {
+        const text = data.choices[0].message.content;
+        if (text && text.trim().length > 0) {
+          console.log(`[Groq LLM] Success with model ${modelName}`);
+          return text.trim();
+        }
+      }
+    } catch (err) {
+      console.warn(`[Groq LLM] Model ${modelName} call failed:`, err.message);
+    }
+  }
+  return null;
+};
+
 // 1. Send message to PrimeAI Coach
 app.post('/api/coach/chat', async (req, res) => {
   try {
@@ -953,15 +1004,24 @@ app.post('/api/coach/chat', async (req, res) => {
 
     let aiText = '';
 
-    // Read API key dynamically from environment
+    // Step 1: Attempt Groq LLM API (High Priority Free Tier LLM)
+    const groqKey = process.env.GROQ_API_KEY || process.env.LLM_API_KEY || '';
+    if (groqKey) {
+      const groqFormattedMessages = conversation.messages.map(m => ({
+        role: m.role === 'model' ? 'assistant' : 'user',
+        content: m.text
+      }));
+      aiText = await callGroqLLM(groqKey, groqFormattedMessages, systemPrompt);
+    }
+
+    // Step 2: Failover to Gemini API if Groq did not return response
     const rawApiKey = process.env.GEMINI_API_KEY || '';
     const apiKey = rawApiKey.trim().replace(/["']/g, '');
 
-    if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.length > 10) {
+    if (!aiText && apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.length > 10) {
       try {
         const dynamicGenAI = new GoogleGenerativeAI(apiKey);
 
-        // Build combined text history for 100% reliable Gemini completions
         let conversationHistoryText = '';
         if (conversation.messages.length > 1) {
           conversationHistoryText = 'Previous Conversation Context:\n' + 
@@ -992,7 +1052,7 @@ app.post('/api/coach/chat', async (req, res) => {
       }
     }
 
-    // If Gemini API calls did not return text, use smart fallback engine
+    // Step 3: Ultimate Safety Net Fallback Engine
     if (!aiText) {
       aiText = generateSmartAIResponse(message, resumeContext);
     }
@@ -1007,12 +1067,21 @@ app.post('/api/coach/chat', async (req, res) => {
 
     await conversation.save();
     res.json({ conversation, aiResponse: aiText });
-
-    await conversation.save();
-    res.json({ conversation, aiResponse: aiText });
   } catch (error) {
     console.error('Error in /api/coach/chat:', error);
     res.status(500).json({ error: 'Failed to process chat message.' });
+  }
+});
+
+// Decision Tree Supervised ML Prediction Route
+app.post('/api/ai/decision-tree-predict', (req, res) => {
+  try {
+    const inputData = req.body;
+    const result = predictPlacementDecisionTree(inputData);
+    res.json(result);
+  } catch (err) {
+    console.error('Error in /api/ai/decision-tree-predict:', err);
+    res.status(500).json({ error: 'Failed to compute Decision Tree prediction.' });
   }
 });
 

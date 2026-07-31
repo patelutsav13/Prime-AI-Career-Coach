@@ -72,6 +72,7 @@ export default function Navbar() {
     { name: 'Role Matcher', path: '/role-matcher' },
     { name: 'AI Interview', path: '/interview' },
     { name: 'AI Coach', path: '/coach' },
+    { name: 'Decision Tree AI', path: '/decision-tree-ai' },
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Contact', path: '/contact' }
   ];
